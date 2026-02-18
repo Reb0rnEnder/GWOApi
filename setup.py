@@ -5,7 +5,7 @@ readme = (Path(__file__).parent / "README.md").read_text()
 
 setup(
     name="gwo",
-    version="0.1.8",
+    version="0.1.9",
     packages=find_packages(),
     long_description=readme,
     long_description_content_type="text/markdown",

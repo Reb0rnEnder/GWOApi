@@ -551,13 +551,13 @@ class GWOApi():
                     resource.answerScore = answerScore
                 return answerScore
             
-    async def answerExam(self, access: Access, section: Section, time_minutes: int, answer: AnswerType = AnswerType.correct, returnGeneratedJson: bool = False) -> Optional[dict]:
+    async def answerExam(self, access: Access, exam: Exam, time_minutes: int, answer: AnswerType = AnswerType.correct, returnGeneratedJson: bool = False) -> Optional[dict]:
         """
         ## ⚠️ EXPERIMENTAL - BOUND TO CHANGE ⚠️\n
         Generates an anwser sheet based on the wanted anwsers and sends it to the server
 
         :param access: The access from which the exam belongs
-        :param section: The exam's section
+        :param section: The exam object
         :param time_minutes: The time in **minutes** that *you* took to anwser the exam sheet 
         :param answer: The answer that you want to imitate (AnswerType) (it actually can be unsolved but still not againIncorrectly) *optional*
         :param returnGeneratedJson: Instead of sending the generated json to the server, returns it (as a dict) *optional*
@@ -631,18 +631,18 @@ class GWOApi():
         
         if returnGeneratedJson:
             return {
-                "publicationSectionId": section.id,
+                "publicationSectionId": exam.id,
                 "time": time_minutes,
-                "exerciseScores": await _generate_exercise_scores(section.resources)
+                "exerciseScores": await _generate_exercise_scores(exam.resources)
             }
         
         async with aiohttp.ClientSession(access.url, headers={
             "User-Agent": self.user_agent
         }) as cs:
             async with cs.post("/api/examScores", json={
-                "publicationSectionId": section.id,
+                "publicationSectionId": exam.id,
                 "time": time_minutes,
-                "exerciseScores": await _generate_exercise_scores(section.resources)
+                "exerciseScores": await _generate_exercise_scores(exam.resources)
             }, headers={
                 "x-authorization": self.token,
                 "x-authorization-access": str(access.id)
@@ -650,17 +650,17 @@ class GWOApi():
                 if not resp.ok:
                     raise FetchException("Unknown server exception", resp.status, await resp.text())
             
-    async def removeExamScore(self, access: Access, section: Section):
+    async def removeExamScore(self, access: Access, exam: Exam):
         """
         Wipes your exam score off the server
         
-        :param access: The access in which the exam section belongs in
-        :param section: The exam's section object
+        :param access: The access in which the exam belongs in
+        :param section: The exam object
         """
         async with aiohttp.ClientSession(access.url, headers={
             "User-Agent": self.user_agent
         }) as cs:
-            async with cs.delete(f"/api/examScores/{section.id}", headers={
+            async with cs.delete(f"/api/examScores/{exam.id}", headers={
                 "x-authorization": self.token,
                 "x-authorization-access": str(access.id)
             }) as resp:
