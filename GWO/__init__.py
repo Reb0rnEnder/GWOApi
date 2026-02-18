@@ -95,18 +95,18 @@ class Resource(Freezable):
     answerScore: AnswerScore
 
 @dataclass(frozen=True)
-class Section():
-    """A section that can contain\n* resources\n * more sections"""
-    id: int
-    name: str
-    sections: List["Section"]
-    resources: List[Resource]
-
-@dataclass(frozen=True)
 class Exam():
     """An exam that can contain\n* resources"""
     id: int
     name: str
+    resources: List[Resource]
+
+@dataclass(frozen=True)
+class Section():
+    """A section that can contain\n* resources\n * more sections\n * exams"""
+    id: int
+    name: str
+    sections: List["Section", Exam]
     resources: List[Resource]
 
 @dataclass(frozen=True)
