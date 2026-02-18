@@ -19,7 +19,6 @@ from datetime import datetime
 from hashlib import md5
 from dataclasses import dataclass, field, FrozenInstanceError
 from contextlib import contextmanager
-from collections.abc import Callable
 
 #// logger
 logger = logging.getLogger("GWO")
@@ -101,6 +100,13 @@ class Section():
     id: int
     name: str
     sections: List["Section"]
+    resources: List[Resource]
+
+@dataclass(frozen=True)
+class Exam():
+    """An exam that can contain\n* resources"""
+    id: int
+    name: str
     resources: List[Resource]
 
 @dataclass(frozen=True)
@@ -196,7 +202,6 @@ class GWOApi():
 
     internal_token: str = "iZ953SkrfVrViV67R6fi0pKQjabHckPx"
     user_agent: str = "PyGWO/0.1.6 (Python3)"
-    log_function: Callable[[str], None]
 
     def __init__(self, token: str, user: User, accesses: List[Access]):
         """## Should not be used, use GWOApi.login()"""
@@ -315,8 +320,8 @@ class GWOApi():
                                 if location == "/":
                                     raise FetchException("URL tracking returned '/', the session might have got revoked")
                                 return "https://" + location[2:].partition("/")[0]
-                    async def retrieveSections(url: str, access_id: int) -> List[Section]:
-                        logger.debug(f"Retrieving sections (id={access_id})")
+                    async def retrieveSections(url: str, access_id: int) -> List[Section | Exam]:
+                        logger.debug(f"Retrieving sections and exams (id={access_id})")
                         async with cs.get(url + "/api/practiceScores", headers={
                             "x-authorization": token,
                             "x-authorization-access": str(access_id)
@@ -334,9 +339,20 @@ class GWOApi():
                                 sections: Dict = (await resp.json())["data"]["publication"]["sections"]
                                 def parseSection(section: Dict) -> Section:
                                     logger.debug(f"Parsing section (id={section['id']})")
-                                    return Section(
-                                        section["id"], section["name"],
+                                    return Section(section["id"], section["name"],
                                         [parseSection(x) for x in section["sections"] or []],
+                                        [Resource(
+                                            resource["id"],
+                                            int(resource["resource"]["filePath"]),
+                                            answer_scores[resource["id"]] if resource["id"] in answer_scores else AnswerScore(
+                                                resource["id"],
+                                                AnswerType.unsolved,
+                                                0,
+                                                0,
+                                                datetime.min
+                                            )).freeze() for resource in section["sectionResources"] or []
+                                        ]
+                                    ) if not section["params"] else Exam(section["id"], section["name"],
                                         [Resource(
                                             resource["id"],
                                             int(resource["resource"]["filePath"]),
