@@ -1,0 +1,15 @@
+site_name: GWO (Python)
+theme:
+  name: material
+  features:
+    - content.code.copy
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+nav:
+  - Getting started: index.md
+  - API Reference:
+      - All Items: refernece/index.md
+      - GWOApi: refernece/GWOApi.md
