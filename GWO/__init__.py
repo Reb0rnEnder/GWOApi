@@ -196,7 +196,7 @@ class GWOApi():
 
     internal_token: str = "iZ953SkrfVrViV67R6fi0pKQjabHckPx"
     user_agent: str = "PyGWO/0.1.6 (Python3)"
-    log_function: Callable[[str]]
+    log_function: Callable[[str], None]
 
     def __init__(self, token: str, user: User, accesses: List[Access]):
         """## Should not be used, use GWOApi.login()"""
@@ -289,7 +289,7 @@ class GWOApi():
                 json: Dict = await resp.json()
                 user = User(json["login"], json["firstName"], json["lastName"], json["email"])
                 if analytics:
-                    await ctx._analyticsLogin(user.login)
+                    await ctx._analyticsLogin(ctx, user.login)
                 logger.debug("Retrieving user accesses")
                 async with cs.get("https://moje.gwo.pl/api/v3/my_accesses/app", cookies={
                     "X-Authorization": token
@@ -362,10 +362,10 @@ class GWOApi():
                             json["coverUrl"],
                             url,
                             [Observer(
-                                observer["id"],
-                                observer["name"],
-                                observer["email"],
-                                observer["is_deletable"]
+                                observer.get("id", 0),
+                                observer.get("name", ""),
+                                observer.get("email", ""),
+                                observer.get("isDeletable", None)
                             ) for observer in json["observers"]],
                             await retrieveSections(url, json["id"])
                         )
